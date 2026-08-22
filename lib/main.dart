@@ -2,94 +2,110 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MiningApp());
+  runApp(const CryptoMinerApp());
 }
 
-class MiningApp extends StatelessWidget {
-  const MiningApp({super.key});
+class CryptoMinerApp extends StatelessWidget {
+  const CryptoMinerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Bitcoin Mining Game',
       debugShowCheckedModeBanner: false,
-      title: 'Crypto Miner',
-      theme: ThemeData.dark(),
-      home: const HomeScreen(),
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: const Color(0xFF0D0E12),
+        primaryColor: const Color(0xFFF7931A), // Bitcoin Orange
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFFF7931A),
+          secondary: Color(0xFF00E676), // Neon Green
+          surface: Color(0xFF1A1D24),
+        ),
+      ),
+      home: const MinerHomeScreen(),
     );
   }
 }
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class MinerHomeScreen extends StatefulWidget {
+  const MinerHomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<MinerHomeScreen> createState() => _MinerHomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  double userBalanceSats = 0.00000050; // رصيد تجريبي
-  double hashRateGhs = 800.0;
-  Timer? _miningTimer;
-  final TextEditingController _walletController = TextEditingController();
+class _MinerHomeScreenState extends State<MinerHomeScreen>
+    with SingleTickerProviderStateMixin {
+  double _balance = 0.00000000;
+  double _hashRate = 100.0; // GH/s
+  Timer? _minerTimer;
+  late AnimationController _pulseController;
 
   @override
   void initState() {
     super.initState();
-    _startMining();
-  }
 
-  void _startMining() {
-    _miningTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    // أنيميشن النبض لحلقة التعدين
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    // مؤقت التعدين لتحديث الرصيد كل ثانية
+    _minerTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
-        userBalanceSats += (hashRateGhs / 100) * 0.00000001;
+        _balance += (_hashRate * 0.0000000001);
       });
     });
   }
 
-  void _watchAdToBoost() {
+  @override
+  void dispose() {
+    _minerTimer?.cancel();
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  void _boostSpeed() {
     setState(() {
-      hashRateGhs += 50.0;
+      _hashRate += 50.0;
     });
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تمت زيادة السرعة +50 GH/s!')),
+      SnackBar(
+        content: const Text(
+          '🚀 تم زياده سرعة التعدين بمقدار +50 GH/s!',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: const Color(0xFF00E676),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
     );
   }
 
-  // نافذة طلب السحب
-  void _showWithdrawDialog() {
+  void _requestWithdraw() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('سحب الأرباح (BTC)'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+        backgroundColor: const Color(0xFF1A1D24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
           children: [
-            Text('رصيدك: ${userBalanceSats.toStringAsFixed(8)} BTC'),
-            const SizedBox(height: 15),
-            TextField(
-              controller: _walletController,
-              decoration: const InputDecoration(
-                labelText: 'عنوان محفظة Bitcoin / Speed',
-                border: OutlineInputBorder(),
-              ),
-            ),
+            Icon(Icons.account_balance_wallet, color: Color(0xFFF7931A)),
+            SizedBox(width: 10),
+            Text('طلب سحب الأرباح', style: TextStyle(color: Colors.white)),
           ],
+        ),
+        content: Text(
+          'رصيدك الحالي هو:\n${_balance.toStringAsFixed(8)} BTC\n\nالحد الأدنى للسحب هو 0.005 BTC.',
+          style: const TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (_walletController.text.isNotEmpty) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('تم إرسال طلب السحب بنجاح!')),
-                );
-              }
-            },
-            child: const Text('سحب الآن'),
+            child: const Text('إغلاق', style: TextStyle(color: Color(0xFFF7931A))),
           ),
         ],
       ),
@@ -97,60 +113,179 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
-  void dispose() {
-    _miningTimer?.cancel();
-    _walletController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bitcoin Mining Game'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('الرصيد المجمع:', style: TextStyle(fontSize: 18)),
-            const SizedBox(height: 10),
+            Icon(Icons.currency_bitcoin, color: Color(0xFFF7931A), size: 28),
+            SizedBox(width: 8),
             Text(
-              '${userBalanceSats.toStringAsFixed(8)} BTC',
-              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.amber),
-            ),
-            const SizedBox(height: 30),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.flash_on, color: Colors.orange),
-                title: const Text('سرعة التعدين الحالية'),
-                trailing: Text('$hashRateGhs GH/s', style: const TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton.icon(
-              onPressed: _watchAdToBoost,
-              icon: const Icon(Icons.play_circle_fill),
-              label: const Text('شاهد إعلان لزيادة السرعة +50 GH/s'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-                backgroundColor: Colors.green,
-              ),
-            ),
-            const SizedBox(height: 15),
-            OutlinedButton.icon(
-              onPressed: _showWithdrawDialog,
-              icon: const Icon(Icons.account_balance_wallet),
-              label: const Text('طلب سحب الأرباح'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              'BITCOIN MINER',
+              style: TextStyle(
+                fontWeight: FontWeight.extrabold,
+                letterSpacing: 1.5,
               ),
             ),
           ],
         ),
       ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              // 1. عنصر الرسوم المتحركة للتعدين (Mining Pulse Element)
+              AnimatedBuilder(
+                animation: _pulseController,
+                builder: (context, child) {
+                  return Container(
+                    padding: const EdgeInsets.all(25),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFF1A1D24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFF7931A).withOpacity(0.2 + (_pulseController.value * 0.3)),
+                          blurRadius: 30 + (_pulseController.value * 20),
+                          spreadRadius: 5 + (_pulseController.value * 10),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.memory,
+                      size: 70,
+                      color: Color.lerp(
+                        const Color(0xFFF7931A),
+                        const Color(0xFFFFB74D),
+                        _pulseController.value,
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              // 2. بطاقات وعرض الرصيد المجمع
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1D24),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'الرصيد المجمع الحالي',
+                      style: TextStyle(color: Colors.white54, fontSize: 16),
+                    ),
+                    const SizedBox(height: 10),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        '${_balance.toStringAsFixed(8)} BTC',
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFF7931A),
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 3. عرض سرعة التعدين الحالية
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1D24),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.bolt, color: Color(0xFF00E676)),
+                        SizedBox(width: 8),
+                        Text(
+                          'سرعة التعدين',
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '${_hashRate.toStringAsFixed(1)} GH/s',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF00E676),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 4. أزرار التحكم والعمليات
+              Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: ElevatedButton.icon(
+                      onPressed: _boostSpeed,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00E676),
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        elevation: 5,
+                      ),
+                      icon: const Icon(Icons.play_circle_fill, size: 28),
+                      label: const Text(
+                        'شاهد إعلان لزيادة السرعة +50 GH/s',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: OutlinedButton.icon(
+                      onPressed: _requestWithdraw,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Color(0xFFF7931A), width: 1.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ),
+                      icon: const Icon(Icons.account_balance_wallet_outlined, color: Color(0xFFF7931A)),
+                      label: const Text(
+                        'طلب سحب الأرباح',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
+
