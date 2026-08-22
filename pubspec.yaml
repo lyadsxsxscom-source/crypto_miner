@@ -1,5 +1,5 @@
 name: crypto_miner
-description: Bitcoin Mining Game
+description: "Bitcoin Mining Game"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  url_launcher: ^6.1.0
 
 flutter:
   uses-material-design: true
