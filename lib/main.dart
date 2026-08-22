@@ -127,7 +127,7 @@ class _MinerHomeScreenState extends State<MinerHomeScreen>
             Text(
               'BITCOIN MINER',
               style: TextStyle(
-                fontWeight: FontWeight.extrabold,
+                fontWeight: FontWeight.w900,
                 letterSpacing: 1.5,
               ),
             ),
