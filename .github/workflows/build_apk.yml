@@ -11,11 +11,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.29.0'
+          flutter-version: '3.x'
       - run: |
           mkdir -p temp_app
-          flutter create temp_app --org com.example.cryptominer
-          cp -r temp_app/android ./
+          cd temp_app
+          flutter create app --org com.example.cryptominer
+          cd ..
+          cp -r temp_app/app/android ./
           rm -rf temp_app
       - run: flutter pub get
       - run: flutter build apk --release --no-tree-shake-icons
@@ -23,4 +25,3 @@ jobs:
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-
