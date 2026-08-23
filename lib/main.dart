@@ -90,18 +90,16 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
       double btcGhs = _calculateHashRateForCoin('BTC');
       double ethGhs = _calculateHashRateForCoin('ETH');
 
-      if (btcGhs > 0 || ethGhs > 0) {
-        setState(() {
-          if (btcGhs > 0) {
-            double btcUsd = (btcGhs / 25.0) * (0.25 / 86400.0);
-            _btcBalance += btcUsd / 60000.0;
-          }
-          if (ethGhs > 0) {
-            double ethUsd = (ethGhs / 25.0) * (0.25 / 86400.0);
-            _ethBalance += ethUsd / 3000.0;
-          }
-        });
-      }
+      setState(() {
+        if (btcGhs > 0) {
+          double btcUsd = (btcGhs / 25.0) * (0.25 / 86400.0);
+          _btcBalance += btcUsd / 60000.0;
+        }
+        if (ethGhs > 0) {
+          double ethUsd = (ethGhs / 25.0) * (0.25 / 86400.0);
+          _ethBalance += ethUsd / 3000.0;
+        }
+      });
     });
   }
 
@@ -193,11 +191,11 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
         coinType: coinType,
         type: type,
         hashRateGHs: ghs,
-        expiresAt: DateTime.now().add(const Duration(days: 1)),
+        expiresAt: DateTime.now().add(const Duration(days: 1)), // يوم واحد
       );
     });
 
-    _showMsg('تم استئجار $name ($coinType) بنجاح!', Colors.green);
+    _showMsg('تم استئجار $name بنجاح!', Colors.green);
   }
 
   void _buyBoxWithMoney(String name, String coinType, String type, double ghs, double costUSD) {
@@ -220,7 +218,7 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
           coinType: coinType,
           type: type,
           hashRateGHs: ghs,
-          expiresAt: DateTime.now().add(const Duration(days: 30)), // شهر كامل
+          expiresAt: DateTime.now().add(const Duration(days: 30)), // 30 يوماً
         );
       });
       _showMsg('تم استئجار $name لمدة شهر بنجاح!', Colors.green);
@@ -346,10 +344,10 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
           Expanded(
             child: GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                crossAxisSpacing: 6,
-                mainAxisSpacing: 6,
-                childAspectRatio: 0.8,
+                crossAxisCount: 3, // تم تعديلها لـ 3 أعمدة لإعطاء مساحة أكبر لاسم العامل والوقت
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                childAspectRatio: 0.85,
               ),
               itemCount: 12,
               itemBuilder: (context, index) => _buildCompactSlotCard(_slots[index]),
@@ -370,10 +368,10 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.lock, color: isPoints ? Colors.orange : Colors.green, size: 18),
-              const SizedBox(height: 2),
-              Text('#${slot.id}', style: const TextStyle(fontSize: 9, color: Colors.white54)),
-              Text(isPoints ? '${slot.unlockCostPoints}P' : '\$${slot.unlockCostUSD}', style: TextStyle(fontSize: 8, color: isPoints ? Colors.orange : Colors.green, fontWeight: FontWeight.bold)),
+              Icon(Icons.lock, color: isPoints ? Colors.orange : Colors.green, size: 22),
+              const SizedBox(height: 4),
+              Text('خانة #${slot.id}', style: const TextStyle(fontSize: 10, color: Colors.white54)),
+              Text(isPoints ? '${slot.unlockCostPoints} Pts' : '\$${slot.unlockCostUSD}', style: TextStyle(fontSize: 9, color: isPoints ? Colors.orange : Colors.green, fontWeight: FontWeight.bold)),
             ],
           ),
         ),
@@ -383,7 +381,6 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
     if (slot.activeMiner == null) {
       return InkWell(
         onTap: () {
-          // الانتقال التلقائي للمتجر عند الضغط على خانة مفتوحة وفارغة
           setState(() {
             _selectedNavIndex = 1; 
           });
@@ -393,8 +390,10 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.add_shopping_cart, color: Color(0xFF00E676), size: 20),
-              Text('#${slot.id} فارغة', style: const TextStyle(fontSize: 8, color: Color(0xFF00E676))),
+              const Icon(Icons.add_shopping_cart, color: Color(0xFF00E676), size: 24),
+              const SizedBox(height: 4),
+              Text('خانة #${slot.id}', style: const TextStyle(fontSize: 10, color: Colors.white38)),
+              const Text('إضافة عامل', style: TextStyle(fontSize: 9, color: Color(0xFF00E676), fontWeight: FontWeight.bold)),
             ],
           ),
         ),
@@ -404,20 +403,39 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
     var miner = slot.activeMiner!;
     Color coinColor = miner.coinType == 'BTC' ? const Color(0xFFF7931A) : const Color(0xFF627AEA);
 
+    // حساب الوقت المتبقي
+    Duration remaining = miner.expiresAt.difference(DateTime.now());
+    String timeRemainingText = '';
+    if (remaining.isNegative) {
+      timeRemainingText = 'انتهى الوقت';
+    } else if (remaining.inDays > 0) {
+      timeRemainingText = '${remaining.inDays} يوم متبقي';
+    } else {
+      timeRemainingText = '${remaining.inHours}س ${remaining.inMinutes.remainder(60)}د متبقي';
+    }
+
     return Container(
-      decoration: BoxDecoration(color: const Color(0xFF151922), borderRadius: BorderRadius.circular(8), border: Border.all(color: coinColor, width: 1)),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(color: const Color(0xFF151922), borderRadius: BorderRadius.circular(8), border: Border.all(color: coinColor, width: 1.2)),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(miner.coinType == 'BTC' ? Icons.currency_bitcoin : Icons.diamond, color: coinColor, size: 18),
-          Text(miner.name, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold), textAlign: TextAlign.center, overflow: TextOverflow.ellipsis),
-          Text('${miner.hashRateGHs.toStringAsFixed(0)} GH/s', style: TextStyle(fontSize: 7, color: coinColor)),
+          Icon(miner.coinType == 'BTC' ? Icons.currency_bitcoin : Icons.diamond, color: coinColor, size: 20),
+          const SizedBox(height: 2),
+          Text(miner.name, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold), textAlign: TextAlign.center, overflow: TextOverflow.ellipsis),
+          Text('${miner.hashRateGHs.toStringAsFixed(0)} GH/s', style: TextStyle(fontSize: 9, color: coinColor, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(4)),
+            child: Text(timeRemainingText, style: const TextStyle(fontSize: 8, color: Colors.white70), textAlign: TextAlign.center),
+          ),
         ],
       ),
     );
   }
 
-  // 2. المتجر (يحتوي على Points و USD للشراء)
+  // 2. المتجر
   Widget _buildShopTab() {
     return DefaultTabController(
       length: 2,
@@ -461,7 +479,7 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
         const SizedBox(height: 6),
         _buildShopItemCard('عامل فضي شهري', coin, 'SILVER', 100, '\$1.99', () => _buyBoxWithMoney('عامل فضي شهري', coin, 'SILVER', 100, 1.99), Colors.green),
         _buildShopItemCard('عامل ذهبي شهري', coin, 'GOLD', 500, '\$4.99', () => _buyBoxWithMoney('عامل ذهبي شهري', coin, 'GOLD', 500, 4.99), Colors.green),
-        _buildShopItemCard('عامل ماسي شهري (1TH)', coin, 'DIAMOND', 1000, '\$8.99', () => _buyBoxWithMoney('عامل ماسي شهري', coin, 'DIAMOND', 1000, 8.99), Colors.green),
+        _buildShopItemCard('عامل ماسي شهري', coin, 'DIAMOND', 1000, '\$8.99', () => _buyBoxWithMoney('عامل ماسي شهري', coin, 'DIAMOND', 1000, 8.99), Colors.green),
       ],
     );
   }
@@ -480,7 +498,7 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                Text('القوة: +${ghs >= 1000 ? "1 TH/s" : "$ghs GH/s"}', style: TextStyle(color: color, fontSize: 9)),
+                Text('القوة: +$ghs GH/s', style: TextStyle(color: color, fontSize: 9)),
               ],
             ),
           ),
