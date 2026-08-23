@@ -72,9 +72,8 @@ class MainRigDashboard extends StatefulWidget {
 
 class _MainRigDashboardState extends State<MainRigDashboard> {
   int _selectedNavIndex = 0;
-  String _userName = "المعدن الذهبي";
+  final String _userName = "المعدن الذهبي";
 
-  // الأرصدة
   double _btcBalance = 0.00000000;
   double _ethBalance = 0.00000000;
   int _points = 1200;
@@ -87,7 +86,6 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
     super.initState();
     _initializeSlots();
 
-    // التعدين المستمر بناءً على نوع جهاز كل خانة
     _miningTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       double btcGhs = _calculateHashRateForCoin('BTC');
       double ethGhs = _calculateHashRateForCoin('ETH');
@@ -184,7 +182,7 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
     }
 
     if (emptySlot == null) {
-      _showMsg('افتح خانة فارغة أولاً في المستودع!', Colors.orangeAccent);
+      _showMsg('لا توجد خانة فارغة في المستودع!', Colors.orangeAccent);
       return;
     }
 
@@ -202,6 +200,33 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
     _showMsg('تم استئجار $name ($coinType) بنجاح!', Colors.green);
   }
 
+  void _buyBoxWithMoney(String name, String coinType, String type, double ghs, double costUSD) {
+    RigSlot? emptySlot;
+    try {
+      emptySlot = _slots.firstWhere((s) => s.isUnlocked && s.activeMiner == null);
+    } catch (_) {
+      emptySlot = null;
+    }
+
+    if (emptySlot == null) {
+      _showMsg('لا توجد خانة فارغة في المستودع!', Colors.orangeAccent);
+      return;
+    }
+
+    _showDemoPaymentDialog('استئجار $name', costUSD, () {
+      setState(() {
+        emptySlot!.activeMiner = MinerBox(
+          name: name,
+          coinType: coinType,
+          type: type,
+          hashRateGHs: ghs,
+          expiresAt: DateTime.now().add(const Duration(days: 30)), // شهر كامل
+        );
+      });
+      _showMsg('تم استئجار $name لمدة شهر بنجاح!', Colors.green);
+    });
+  }
+
   void _showMsg(String text, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(text, textAlign: TextAlign.center), backgroundColor: color, behavior: SnackBarBehavior.floating),
@@ -214,7 +239,7 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF151922),
         title: Text('بوابة الشراء ($title)'),
-        content: Text('المبلغ: \$$amountUSD USD'),
+        content: Text('المبلغ: \$$amountUSD USD\n\n(شراء تجريبي لتفعيل العامل)'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
           ElevatedButton(
@@ -286,7 +311,7 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
     );
   }
 
-  // 1. المستودع المصغر
+  // 1. المستودع
   Widget _buildWarehouseTab() {
     double btcGhs = _calculateHashRateForCoin('BTC');
     double ethGhs = _calculateHashRateForCoin('ETH');
@@ -321,7 +346,7 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
           Expanded(
             child: GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4, // 4 خانات في السطر لتصغير الحجم
+                crossAxisCount: 4,
                 crossAxisSpacing: 6,
                 mainAxisSpacing: 6,
                 childAspectRatio: 0.8,
@@ -356,14 +381,22 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
     }
 
     if (slot.activeMiner == null) {
-      return Container(
-        decoration: BoxDecoration(color: const Color(0xFF151922), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.white12)),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.add, color: Colors.white24, size: 20),
-            Text('#${slot.id}', style: const TextStyle(fontSize: 8, color: Colors.white38)),
-          ],
+      return InkWell(
+        onTap: () {
+          // الانتقال التلقائي للمتجر عند الضغط على خانة مفتوحة وفارغة
+          setState(() {
+            _selectedNavIndex = 1; 
+          });
+        },
+        child: Container(
+          decoration: BoxDecoration(color: const Color(0xFF151922), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.green.withOpacity(0.5))),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.add_shopping_cart, color: Color(0xFF00E676), size: 20),
+              Text('#${slot.id} فارغة', style: const TextStyle(fontSize: 8, color: Color(0xFF00E676))),
+            ],
+          ),
         ),
       );
     }
@@ -384,7 +417,7 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
     );
   }
 
-  // 2. المتجر المقسم لحُزم BTC و ETH
+  // 2. المتجر (يحتوي على Points و USD للشراء)
   Widget _buildShopTab() {
     return DefaultTabController(
       length: 2,
@@ -416,45 +449,52 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
     return ListView(
       padding: const EdgeInsets.all(10),
       children: [
-        Text('عمال $coin بـ Points (يومي)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: coinColor)),
+        Text('تأجير عمال $coin بـ النقاط (يومي)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: coinColor)),
         const SizedBox(height: 6),
-        _buildShopItemCard('عامل $coin خشبي', coin, 'WOOD', 25, 300, coinColor),
-        _buildShopItemCard('عامل $coin فضي', coin, 'SILVER', 100, 800, coinColor),
-        _buildShopItemCard('عامل $coin ذهبي', coin, 'GOLD', 500, 3000, coinColor),
-        _buildShopItemCard('عامل $coin الماسي', coin, 'DIAMOND', 1000, 5500, coinColor),
+        _buildShopItemCard('عامل خشبي', coin, 'WOOD', 25, '300 Pts', () => _buyBoxWithPoints('عامل خشبي', coin, 'WOOD', 25, 300), coinColor),
+        _buildShopItemCard('عامل فضي', coin, 'SILVER', 100, '800 Pts', () => _buyBoxWithPoints('عامل فضي', coin, 'SILVER', 100, 800), coinColor),
+        _buildShopItemCard('عامل ذهبي', coin, 'GOLD', 500, '3000 Pts', () => _buyBoxWithPoints('عامل ذهبي', coin, 'GOLD', 500, 3000), coinColor),
+        _buildShopItemCard('عامل ماسي', coin, 'DIAMOND', 1000, '5500 Pts', () => _buyBoxWithPoints('عامل ماسي', coin, 'DIAMOND', 1000, 5500), coinColor),
+
+        const SizedBox(height: 14),
+        Text('شراء عمال $coin بالمال الحقيقي (شهري - 30 يوم)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.greenAccent)),
+        const SizedBox(height: 6),
+        _buildShopItemCard('عامل فضي شهري', coin, 'SILVER', 100, '\$1.99', () => _buyBoxWithMoney('عامل فضي شهري', coin, 'SILVER', 100, 1.99), Colors.green),
+        _buildShopItemCard('عامل ذهبي شهري', coin, 'GOLD', 500, '\$4.99', () => _buyBoxWithMoney('عامل ذهبي شهري', coin, 'GOLD', 500, 4.99), Colors.green),
+        _buildShopItemCard('عامل ماسي شهري (1TH)', coin, 'DIAMOND', 1000, '\$8.99', () => _buyBoxWithMoney('عامل ماسي شهري', coin, 'DIAMOND', 1000, 8.99), Colors.green),
       ],
     );
   }
 
-  Widget _buildShopItemCard(String name, String coinType, String type, double ghs, int costPoints, Color color) {
+  Widget _buildShopItemCard(String name, String coinType, String type, double ghs, String priceText, VoidCallback onBuy, Color color) {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(color: const Color(0xFF151922), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.white10)),
       child: Row(
         children: [
-          Icon(coinType == 'BTC' ? Icons.currency_bitcoin : Icons.diamond, size: 24, color: color),
+          Icon(coinType == 'BTC' ? Icons.currency_bitcoin : Icons.diamond, size: 22, color: color),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                Text('+$ghs GH/s', style: TextStyle(color: color, fontSize: 9)),
+                Text('القوة: +${ghs >= 1000 ? "1 TH/s" : "$ghs GH/s"}', style: TextStyle(color: color, fontSize: 9)),
               ],
             ),
           ),
           ElevatedButton(
-            onPressed: () => _buyBoxWithPoints(name, coinType, type, ghs, costPoints),
+            onPressed: onBuy,
             style: ElevatedButton.styleFrom(backgroundColor: color, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0)),
-            child: Text('$costPoints Pts', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+            child: Text(priceText, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
-  // 3. جدار العروض
+  // 3. المهام
   Widget _buildOfferwallTab() {
     return Padding(
       padding: const EdgeInsets.all(12.0),
@@ -491,7 +531,7 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
     );
   }
 
-  // 4. واجهة الملف الشخصي (Profile)
+  // 4. الملف الشخصي
   Widget _buildProfileTab() {
     double totalUsdBalance = (_btcBalance * 60000.0) + (_ethBalance * 3000.0);
 
@@ -510,7 +550,6 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
           const Text('مُعدِّن محترف', style: TextStyle(color: Colors.white54, fontSize: 11)),
           const SizedBox(height: 16),
 
-          // كارت الرصيد التقديري بالدولار
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(14),
@@ -531,15 +570,6 @@ class _MainRigDashboardState extends State<MainRigDashboard> {
             leading: const Icon(Icons.stars, color: Color(0xFF00B0FF)),
             title: const Text('رصيد النقاط', style: TextStyle(fontSize: 12)),
             trailing: Text('$_points Pts', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-          ),
-          const SizedBox(height: 6),
-          ListTile(
-            tileColor: const Color(0xFF151922),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            leading: const Icon(Icons.account_balance_wallet, color: Colors.orangeAccent),
-            title: const Text('طلب سحب الأرباح', style: TextStyle(fontSize: 12)),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white38),
-            onTap: () => _showMsg('نظام السحب سيتوفر قريباً!', Colors.orange),
           ),
         ],
       ),
