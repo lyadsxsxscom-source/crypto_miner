@@ -7,7 +7,7 @@ void main() {
 class CryptoMinerApp extends StatelessWidget {
   const CryptoMinerApp({super.key});
 
-  @appOverride
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Crypto Miner',
