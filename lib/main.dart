@@ -168,25 +168,6 @@ Future<void> _handleGoogleSignIn() async {
   } finally {
     if (mounted) setState(() => _isLoggingIn = false);
   }
-}
-
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      await FirebaseAuth.instance.signInWithCredential(credential);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ أثناء التسجيل: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoggingIn = false);
-    }
-  }
 
   Future<void> _handleSignOut() async {
     try {
