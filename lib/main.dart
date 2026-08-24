@@ -92,7 +92,6 @@ class _ProfileTabState extends State<ProfileTab> {
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoggingIn = true);
     try {
-      // إجبار المكون على استدعاء Web Client ID الموجود في google-services.json
       final GoogleSignIn googleSignIn = GoogleSignIn(
         serverClientId: '1017358589643-fan84jsi99geh5bpo37qaj5bhamasdlq.apps.googleusercontent.com',
       );
@@ -113,7 +112,7 @@ class _ProfileTabState extends State<ProfileTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ: $e')),
+          SnackBar(content: Text('خطأ أثناء التسجيل: $e')),
         );
       }
     } finally {
@@ -122,8 +121,12 @@ class _ProfileTabState extends State<ProfileTab> {
   }
 
   Future<void> _handleSignOut() async {
-    await GoogleSignIn().signOut();
-    await FirebaseAuth.instance.signOut();
+    try {
+      await GoogleSignIn().signOut();
+      await FirebaseAuth.instance.signOut();
+    } catch (e) {
+      debugPrint("Sign out error: $e");
+    }
   }
 
   @override
@@ -131,8 +134,12 @@ class _ProfileTabState extends State<ProfileTab> {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        final user = snapshot.data;
+        // حماية من الأخطاء لتجنب الشاشة الرمادية
+        if (snapshot.hasError) {
+          return _buildLoggedOutUI();
+        }
 
+        final user = snapshot.data;
         if (user != null) {
           return Center(
             child: Column(
@@ -158,36 +165,40 @@ class _ProfileTabState extends State<ProfileTab> {
           );
         }
 
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircleAvatar(
-                radius: 40,
-                backgroundColor: Colors.amber,
-                child: Icon(Icons.person, size: 50, color: Colors.black),
-              ),
-              const SizedBox(height: 16),
-              const Text('المعدن الذهبي', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const Text('مُعَدّن زائر', style: TextStyle(color: Colors.grey)),
-              const SizedBox(height: 30),
-              if (_isLoggingIn)
-                const CircularProgressIndicator(color: Colors.amber)
-              else
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                  icon: const Icon(Icons.login, color: Colors.red),
-                  label: const Text('تسجيل الدخول باستخدام Google', style: TextStyle(fontWeight: FontWeight.bold)),
-                  onPressed: _handleGoogleSignIn,
-                ),
-            ],
-          ),
-        );
+        return _buildLoggedOutUI();
       },
+    );
+  }
+
+  Widget _buildLoggedOutUI() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircleAvatar(
+            radius: 40,
+            backgroundColor: Colors.amber,
+            child: Icon(Icons.person, size: 50, color: Colors.black),
+          ),
+          const SizedBox(height: 16),
+          const Text('المعدن الذهبي', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const Text('مُعَدّن زائر', style: TextStyle(color: Colors.grey)),
+          const SizedBox(height: 30),
+          if (_isLoggingIn)
+            const CircularProgressIndicator(color: Colors.amber)
+          else
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              icon: const Icon(Icons.login, color: Colors.red),
+              label: const Text('تسجيل الدخول باستخدام Google', style: TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: _handleGoogleSignIn,
+            ),
+        ],
+      ),
     );
   }
 }
