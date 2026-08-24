@@ -3,27 +3,18 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-Future<void> main() async {
+void main() async {
+  // 1. تأكيد تهيئة البيئة
   WidgetsFlutterBinding.ensureInitialized();
 
-  ErrorWidget.builder = (FlutterErrorDetails details) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Text(
-              'حدث خطأ في الواجهة:\n\n${details.exception}',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.redAccent, fontSize: 14),
-            ),
-          ),
-        ),
-      ),
+  // 2. تهيئة Firebase بشكل آمن ومبكر جداً قبل رسم الشاشات
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: CryptoMinerApp._firebaseOptions,
     );
-  };
+  }
 
+  // 3. تشغيل التطبيق
   runApp(const CryptoMinerApp());
 }
 
@@ -92,9 +83,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 60, color: Colors.amber),
-          const SizedBox(height: 12),
-          Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          Icon(icon, size: 64, color: Colors.amber),
+          const SizedBox(height: 16),
+          Text(title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -137,7 +128,7 @@ class _ProfileTabState extends State<ProfileTab> {
     } finally {
       if (mounted) setState(() => _isLoggingIn = false);
     }
-  } // <-- تم إضافة قوس الإغلاق هنا بشكل صحيح
+  }
 
   Future<void> _handleSignOut() async {
     try {
@@ -169,11 +160,14 @@ class _ProfileTabState extends State<ProfileTab> {
                   child: user.photoURL == null ? const Icon(Icons.person, size: 40) : null,
                 ),
                 const SizedBox(height: 12),
-                Text(user.displayName ?? 'مستخدم Google', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                Text(
+                  user.displayName ?? 'مستخدم Google',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 Text(user.email ?? '', style: const TextStyle(color: Colors.grey)),
                 const SizedBox(height: 30),
                 ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                   icon: const Icon(Icons.logout),
                   label: const Text('تسجيل الخروج'),
                   onPressed: _handleSignOut,
@@ -193,26 +187,12 @@ class _ProfileTabState extends State<ProfileTab> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircleAvatar(
-            radius: 40,
-            backgroundColor: Colors.amber,
-            child: Icon(Icons.person, size: 50, color: Colors.black),
-          ),
-          const SizedBox(height: 16),
-          const Text('المعدن الذهبي', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          const Text('مُعَدّن زائر', style: TextStyle(color: Colors.grey)),
-          const SizedBox(height: 30),
           if (_isLoggingIn)
             const CircularProgressIndicator(color: Colors.amber)
           else
             ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-              icon: const Icon(Icons.login, color: Colors.red),
-              label: const Text('تسجيل الدخول باستخدام Google', style: TextStyle(fontWeight: FontWeight.bold)),
+              icon: const Icon(Icons.login),
+              label: const Text('تسجيل الدخول بواسطة Google'),
               onPressed: _handleGoogleSignIn,
             ),
         ],
