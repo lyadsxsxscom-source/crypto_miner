@@ -144,12 +144,21 @@ class _ProfileTabState extends State<ProfileTab> {
 Future<void> _handleGoogleSignIn() async {
   setState(() => _isLoggingIn = true);
   try {
-    // استخدام Web Provider المباشر المتوافق مع كافة البيئات
-    GoogleAuthProvider googleProvider = GoogleAuthProvider();
-    googleProvider.addScope('email');
-    
-    // تسجيل الدخول بالاعتماد على Firebase Auth المباشر
-    await FirebaseAuth.instance.signInWithProvider(googleProvider);
+    // تمرير الـ Client ID الذي ظهر في شاشتك بشكل صريح
+    final GoogleSignIn googleSignIn = GoogleSignIn(
+      serverClientId: '1017358589643-fan84jsi99geh5bpo37qaj5bhamasdlq.apps.googleusercontent.com',
+    );
+
+    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+    if (googleUser == null) return; // المستخدم ألغى النافذة
+
+    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+    final OAuthCredential credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    await FirebaseAuth.instance.signInWithCredential(credential);
   } catch (e) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -160,7 +169,6 @@ Future<void> _handleGoogleSignIn() async {
     if (mounted) setState(() => _isLoggingIn = false);
   }
 }
-
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final AuthCredential credential = GoogleAuthProvider.credential(
