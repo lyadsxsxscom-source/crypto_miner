@@ -141,33 +141,33 @@ class ProfileTab extends StatefulWidget {
 class _ProfileTabState extends State<ProfileTab> {
   bool _isLoggingIn = false;
 
-Future<void> _handleGoogleSignIn() async {
-  setState(() => _isLoggingIn = true);
-  try {
-    // تمرير الـ Client ID الذي ظهر في شاشتك بشكل صريح
-    final GoogleSignIn googleSignIn = GoogleSignIn(
-      serverClientId: '1017358589643-fan84jsi99geh5bpo37qaj5bhamasdlq.apps.googleusercontent.com',
-    );
-
-    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-    if (googleUser == null) return; // المستخدم ألغى النافذة
-
-    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-    final OAuthCredential credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    await FirebaseAuth.instance.signInWithCredential(credential);
-  } catch (e) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('خطأ أثناء التسجيل: $e')),
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoggingIn = true);
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        serverClientId: '1017358589643-fan84jsi99geh5bpo37qaj5bhamasdlq.apps.googleusercontent.com',
       );
+
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (googleUser == null) return;
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      await FirebaseAuth.instance.signInWithCredential(credential);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ أثناء التسجيل: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoggingIn = false);
     }
-  } finally {
-    if (mounted) setState(() => _isLoggingIn = false);
-  }
+  } // <-- تم إضافة قوس الإغلاق هنا بشكل صحيح
 
   Future<void> _handleSignOut() async {
     try {
