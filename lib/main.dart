@@ -8,7 +8,7 @@ void main() async {
   try {
     await Firebase.initializeApp();
   } catch (e) {
-    debugPrint("Firebase init error: $e");
+    debugPrint("Firebase initialization failed: $e");
   }
   runApp(const CryptoMinerApp());
 }
@@ -88,6 +88,23 @@ class ProfileTab extends StatefulWidget {
 
 class _ProfileTabState extends State<ProfileTab> {
   bool _isLoggingIn = false;
+  User? _currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkCurrentUser();
+  }
+
+  void _checkCurrentUser() {
+    try {
+      setState(() {
+        _currentUser = FirebaseAuth.instance.currentUser;
+      });
+    } catch (e) {
+      debugPrint("Auth Check Error: $e");
+    }
+  }
 
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoggingIn = true);
@@ -98,7 +115,7 @@ class _ProfileTabState extends State<ProfileTab> {
 
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
-        setState(() => _isLoggingIn = false);
+        if (mounted) setState(() => _isLoggingIn = false);
         return;
       }
 
@@ -108,7 +125,13 @@ class _ProfileTabState extends State<ProfileTab> {
         idToken: googleAuth.idToken,
       );
 
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      
+      if (mounted) {
+        setState(() {
+          _currentUser = userCredential.user;
+        });
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -124,6 +147,11 @@ class _ProfileTabState extends State<ProfileTab> {
     try {
       await GoogleSignIn().signOut();
       await FirebaseAuth.instance.signOut();
+      if (mounted) {
+        setState(() {
+          _currentUser = null;
+        });
+      }
     } catch (e) {
       debugPrint("Sign out error: $e");
     }
@@ -131,46 +159,31 @@ class _ProfileTabState extends State<ProfileTab> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        // حماية من الأخطاء لتجنب الشاشة الرمادية
-        if (snapshot.hasError) {
-          return _buildLoggedOutUI();
-        }
-
-        final user = snapshot.data;
-        if (user != null) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundImage: user.photoURL != null ? NetworkImage(user.photoURL!) : null,
-                  child: user.photoURL == null ? const Icon(Icons.person, size: 40) : null,
-                ),
-                const SizedBox(height: 12),
-                Text(user.displayName ?? 'مستخدم Google', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                Text(user.email ?? '', style: const TextStyle(color: Colors.grey)),
-                const SizedBox(height: 30),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-                  icon: const Icon(Icons.logout),
-                  label: const Text('تسجيل الخروج'),
-                  onPressed: _handleSignOut,
-                ),
-              ],
+    if (_currentUser != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 40,
+              backgroundImage: _currentUser!.photoURL != null ? NetworkImage(_currentUser!.photoURL!) : null,
+              child: _currentUser!.photoURL == null ? const Icon(Icons.person, size: 40) : null,
             ),
-          );
-        }
+            const SizedBox(height: 12),
+            Text(_currentUser!.displayName ?? 'مستخدم Google', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            Text(_currentUser!.email ?? '', style: const TextStyle(color: Colors.grey)),
+            const SizedBox(height: 30),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              icon: const Icon(Icons.logout),
+              label: const Text('تسجيل الخروج'),
+              onPressed: _handleSignOut,
+            ),
+          ],
+        ),
+      );
+    }
 
-        return _buildLoggedOutUI();
-      },
-    );
-  }
-
-  Widget _buildLoggedOutUI() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
