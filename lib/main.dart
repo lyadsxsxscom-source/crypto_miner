@@ -31,8 +31,8 @@ class CryptoMinerApp extends StatelessWidget {
   const CryptoMinerApp({super.key});
 
   static const FirebaseOptions _firebaseOptions = FirebaseOptions(
-    apiKey: "AIzaSyCJRpc2021fgsi4JNAITf1RMwAMt2BsX18",
-    appId: "1:1017358589643:android:f367b9c036f788e2b5054e",
+    apiKey: "AIzaSyCJRpc2021fgsi4JNAITf1RWWAVt2BsX18",
+    appId: "1:1017358589643:android:f367b9c036f786e2b5054e",
     messagingSenderId: "1017358589643",
     projectId: "asyr-asyr-tab8",
     storageBucket: "asyr-asyr-tab8.firebasestorage.app",
@@ -44,37 +44,7 @@ class CryptoMinerApp extends StatelessWidget {
       title: 'Crypto Miner',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
-      home: FutureBuilder(
-        future: Firebase.initializeApp(
-          options: _firebaseOptions,
-        ),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Scaffold(
-              body: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'فشل الاتصال بـ Firebase:\n${snapshot.error}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ),
-              ),
-            );
-          }
-
-          if (snapshot.connectionState == ConnectionState.done) {
-            return const MainNavigationScreen();
-          }
-
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(color: Colors.amber),
-            ),
-          );
-        },
-      ),
+      home: const MainNavigationScreen(),
     );
   }
 }
