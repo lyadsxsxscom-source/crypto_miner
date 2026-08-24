@@ -30,7 +30,6 @@ Future<void> main() async {
 class CryptoMinerApp extends StatelessWidget {
   const CryptoMinerApp({super.key});
 
-  // البيانات الحقيقية المستخرجة مباشرة من ملف google-services.json الخاص بمشروعك
   static const FirebaseOptions _firebaseOptions = FirebaseOptions(
     apiKey: "AIzaSyCJRpc2021fgsi4JNAITf1RMwAMt2BsX18",
     appId: "1:1017358589643:android:f367b9c036f788e2b5054e",
@@ -142,16 +141,13 @@ class ProfileTab extends StatefulWidget {
 class _ProfileTabState extends State<ProfileTab> {
   bool _isLoggingIn = false;
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: '1017358589643-tsl6n40tfa8ofd8sflfm1feikpo44f5m.apps.googleusercontent.com',
-    serverClientId: '1017358589643-fan84jsi99geh5bpo37qaj5bhamasdlq.apps.googleusercontent.com',
-  );
-
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoggingIn = true);
     try {
-      await _googleSignIn.signOut();
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      await googleSignIn.signOut();
+      
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       
       if (googleUser == null) {
         if (mounted) setState(() => _isLoggingIn = false);
@@ -178,7 +174,7 @@ class _ProfileTabState extends State<ProfileTab> {
 
   Future<void> _handleSignOut() async {
     try {
-      await _googleSignIn.signOut();
+      await GoogleSignIn().signOut();
       await FirebaseAuth.instance.signOut();
     } catch (e) {
       debugPrint("Sign out error: $e");
