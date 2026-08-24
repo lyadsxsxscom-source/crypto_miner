@@ -8,7 +8,7 @@ void main() async {
   try {
     await Firebase.initializeApp();
   } catch (e) {
-    debugPrint("Firebase init error: $e");
+    debugPrint("Firebase initialization bypassed: $e");
   }
   runApp(const CryptoMinerApp());
 }
@@ -35,29 +35,44 @@ class MainNavigationScreen extends StatefulWidget {
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _currentIndex = 3;
+  int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: const [
-          Center(child: Text('المستودع', style: TextStyle(fontSize: 20))),
-          Center(child: Text('المتجر', style: TextStyle(fontSize: 20))),
-          Center(child: Text('المهام', style: TextStyle(fontSize: 20))),
-          ProfileTab(),
+        children: [
+          _buildPlaceholderView('المستودع', Icons.grid_view),
+          _buildPlaceholderView('المتجر', Icons.store),
+          _buildPlaceholderView('المهام', Icons.assignment),
+          const ProfileTab(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
         type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.amber,
+        unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.grid_view), label: 'المستودع'),
           BottomNavigationBarItem(icon: Icon(Icons.store), label: 'المتجر'),
           BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'المهام'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'الملف'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderView(String title, IconData icon) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 60, color: Colors.amber),
+          const SizedBox(height: 12),
+          Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -114,7 +129,6 @@ class _ProfileTabState extends State<ProfileTab> {
         final user = snapshot.data;
 
         if (user != null) {
-          // واجهة المستخدم بعد تسجيل الدخول
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -139,7 +153,6 @@ class _ProfileTabState extends State<ProfileTab> {
           );
         }
 
-        // واجهة تسجيل الدخول (غير مسجل)
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
