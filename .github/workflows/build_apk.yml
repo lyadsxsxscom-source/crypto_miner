@@ -9,18 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.x'
-      - run: |
-          mkdir -p temp_app
-          cd temp_app
-          flutter create app --org com.example.cryptominer
-          cd ..
-          cp -r temp_app/app/android ./
-          rm -rf temp_app
+
       - run: flutter pub get
-      - run: flutter build apk --release --no-tree-shake-icons
+
+      - run: flutter build apk --release --no-tree-shake-icons --skip-build-dependency-validation
+
       - uses: actions/upload-artifact@v4
         with:
           name: release-apk
