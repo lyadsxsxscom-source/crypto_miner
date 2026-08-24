@@ -8,7 +8,7 @@ void main() async {
   try {
     await Firebase.initializeApp();
   } catch (e) {
-    debugPrint("Firebase init error: $e");
+    debugPrint("Firebase initialization failed: $e");
   }
   runApp(const CryptoMinerApp());
 }
@@ -92,14 +92,10 @@ class _ProfileTabState extends State<ProfileTab> {
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoggingIn = true);
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        scopes: ['email'],
-        serverClientId: '1017358589643-fan84jsi99geh5bpo37qaj5bhamasdlq.apps.googleusercontent.com',
-      );
+      final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
+      await googleSignIn.signOut();
 
-      await googleSignIn.signOut(); // إنهاء أي جلسة معلقة
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      
       if (googleUser == null) {
         if (mounted) setState(() => _isLoggingIn = false);
         return;
@@ -137,6 +133,10 @@ class _ProfileTabState extends State<ProfileTab> {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return _buildLoggedOutUI();
+        }
+
         final user = snapshot.data;
         if (user != null) {
           return Center(
@@ -163,36 +163,40 @@ class _ProfileTabState extends State<ProfileTab> {
           );
         }
 
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircleAvatar(
-                radius: 40,
-                backgroundColor: Colors.amber,
-                child: Icon(Icons.person, size: 50, color: Colors.black),
-              ),
-              const SizedBox(height: 16),
-              const Text('المعدن الذهبي', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const Text('مُعَدّن زائر', style: TextStyle(color: Colors.grey)),
-              const SizedBox(height: 30),
-              if (_isLoggingIn)
-                const CircularProgressIndicator(color: Colors.amber)
-              else
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                  icon: const Icon(Icons.login, color: Colors.red),
-                  label: const Text('تسجيل الدخول باستخدام Google', style: TextStyle(fontWeight: FontWeight.bold)),
-                  onPressed: _handleGoogleSignIn,
-                ),
-            ],
-          ),
-        );
+        return _buildLoggedOutUI();
       },
+    );
+  }
+
+  Widget _buildLoggedOutUI() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircleAvatar(
+            radius: 40,
+            backgroundColor: Colors.amber,
+            child: Icon(Icons.person, size: 50, color: Colors.black),
+          ),
+          const SizedBox(height: 16),
+          const Text('المعدن الذهبي', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const Text('مُعَدّن زائر', style: TextStyle(color: Colors.grey)),
+          const SizedBox(height: 30),
+          if (_isLoggingIn)
+            const CircularProgressIndicator(color: Colors.amber)
+          else
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              icon: const Icon(Icons.login, color: Colors.red),
+              label: const Text('تسجيل الدخول باستخدام Google', style: TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: _handleGoogleSignIn,
+            ),
+        ],
+      ),
     );
   }
 }
