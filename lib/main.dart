@@ -5,11 +5,32 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // تخصيص شاشة الخطأ لمنع ظهور الشاشة الرمادية وعرض سبب الخطأ الحقيقي
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Text(
+              'حدث خطأ في الواجهة:\n\n${details.exception}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.redAccent, fontSize: 14),
+            ),
+          ),
+        ),
+      ),
+    );
+  };
+
   try {
     await Firebase.initializeApp();
   } catch (e) {
     debugPrint("Firebase init error: $e");
   }
+
   runApp(const CryptoMinerApp());
 }
 
@@ -89,17 +110,13 @@ class ProfileTab extends StatefulWidget {
 class _ProfileTabState extends State<ProfileTab> {
   bool _isLoggingIn = false;
 
-  // الربط المباشر المضمون لخدمة جوجل
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: '1017358589643-tsl6n40tfa8ofd8sflfm1feikpo44f5m.apps.googleusercontent.com',
-    serverClientId: '1017358589643-fan84jsi99geh5bpo37qaj5bhamasdlq.apps.googleusercontent.com',
-  );
-
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoggingIn = true);
     try {
-      await _googleSignIn.signOut();
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      await googleSignIn.signOut();
+      
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       
       if (googleUser == null) {
         if (mounted) setState(() => _isLoggingIn = false);
@@ -126,7 +143,7 @@ class _ProfileTabState extends State<ProfileTab> {
 
   Future<void> _handleSignOut() async {
     try {
-      await _googleSignIn.signOut();
+      await GoogleSignIn().signOut();
       await FirebaseAuth.instance.signOut();
     } catch (e) {
       debugPrint("Sign out error: $e");
@@ -138,6 +155,15 @@ class _ProfileTabState extends State<ProfileTab> {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              'خطأ في الاتصال: ${snapshot.error}',
+              style: const TextStyle(color: Colors.red),
+            ),
+          );
+        }
+
         final user = snapshot.data;
         if (user != null) {
           return Center(
