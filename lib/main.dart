@@ -92,7 +92,12 @@ class _ProfileTabState extends State<ProfileTab> {
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoggingIn = true);
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      // إجبار المكون على استدعاء Web Client ID الموجود في google-services.json
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        serverClientId: '1017358589643-fan84jsi99geh5bpo37qaj5bhamasdlq.apps.googleusercontent.com',
+      );
+
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
         setState(() => _isLoggingIn = false);
         return;
@@ -108,7 +113,7 @@ class _ProfileTabState extends State<ProfileTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تنبيه: يلزم ربط ملف google-services.json ($e)')),
+          SnackBar(content: Text('حدث خطأ: $e')),
         );
       }
     } finally {
@@ -116,37 +121,73 @@ class _ProfileTabState extends State<ProfileTab> {
     }
   }
 
+  Future<void> _handleSignOut() async {
+    await GoogleSignIn().signOut();
+    await FirebaseAuth.instance.signOut();
+  }
+
   @override
   Widget build(BuildContext context) {
-    // إظهار الواجهة مباشرة دون انتظار Firebase لمنع الشاشة الرمادية
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircleAvatar(
-            radius: 40,
-            backgroundColor: Colors.amber,
-            child: Icon(Icons.person, size: 50, color: Colors.black),
-          ),
-          const SizedBox(height: 16),
-          const Text('المعدن الذهبي', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          const Text('مُعَدّن زائر', style: TextStyle(color: Colors.grey)),
-          const SizedBox(height: 30),
-          if (_isLoggingIn)
-            const CircularProgressIndicator(color: Colors.amber)
-          else
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-              icon: const Icon(Icons.login, color: Colors.red),
-              label: const Text('تسجيل الدخول باستخدام Google', style: TextStyle(fontWeight: FontWeight.bold)),
-              onPressed: _handleGoogleSignIn,
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        final user = snapshot.data;
+
+        if (user != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundImage: user.photoURL != null ? NetworkImage(user.photoURL!) : null,
+                  child: user.photoURL == null ? const Icon(Icons.person, size: 40) : null,
+                ),
+                const SizedBox(height: 12),
+                Text(user.displayName ?? 'مستخدم Google', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                Text(user.email ?? '', style: const TextStyle(color: Colors.grey)),
+                const SizedBox(height: 30),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                  icon: const Icon(Icons.logout),
+                  label: const Text('تسجيل الخروج'),
+                  onPressed: _handleSignOut,
+                ),
+              ],
             ),
-        ],
-      ),
+          );
+        }
+
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircleAvatar(
+                radius: 40,
+                backgroundColor: Colors.amber,
+                child: Icon(Icons.person, size: 50, color: Colors.black),
+              ),
+              const SizedBox(height: 16),
+              const Text('المعدن الذهبي', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const Text('مُعَدّن زائر', style: TextStyle(color: Colors.grey)),
+              const SizedBox(height: 30),
+              if (_isLoggingIn)
+                const CircularProgressIndicator(color: Colors.amber)
+              else
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                  icon: const Icon(Icons.login, color: Colors.red),
+                  label: const Text('تسجيل الدخول باستخدام Google', style: TextStyle(fontWeight: FontWeight.bold)),
+                  onPressed: _handleGoogleSignIn,
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
