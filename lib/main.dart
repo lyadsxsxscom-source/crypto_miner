@@ -8,7 +8,7 @@ void main() async {
   try {
     await Firebase.initializeApp();
   } catch (e) {
-    debugPrint("Firebase initialization failed: $e");
+    debugPrint("Firebase init error: $e");
   }
   runApp(const CryptoMinerApp());
 }
@@ -88,32 +88,18 @@ class ProfileTab extends StatefulWidget {
 
 class _ProfileTabState extends State<ProfileTab> {
   bool _isLoggingIn = false;
-  User? _currentUser;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkCurrentUser();
-  }
-
-  void _checkCurrentUser() {
-    try {
-      setState(() {
-        _currentUser = FirebaseAuth.instance.currentUser;
-      });
-    } catch (e) {
-      debugPrint("Auth Check Error: $e");
-    }
-  }
 
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoggingIn = true);
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email'],
         serverClientId: '1017358589643-fan84jsi99geh5bpo37qaj5bhamasdlq.apps.googleusercontent.com',
       );
 
+      await googleSignIn.signOut(); // إنهاء أي جلسة معلقة
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      
       if (googleUser == null) {
         if (mounted) setState(() => _isLoggingIn = false);
         return;
@@ -125,13 +111,7 @@ class _ProfileTabState extends State<ProfileTab> {
         idToken: googleAuth.idToken,
       );
 
-      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-      
-      if (mounted) {
-        setState(() {
-          _currentUser = userCredential.user;
-        });
-      }
+      await FirebaseAuth.instance.signInWithCredential(credential);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -147,11 +127,6 @@ class _ProfileTabState extends State<ProfileTab> {
     try {
       await GoogleSignIn().signOut();
       await FirebaseAuth.instance.signOut();
-      if (mounted) {
-        setState(() {
-          _currentUser = null;
-        });
-      }
     } catch (e) {
       debugPrint("Sign out error: $e");
     }
@@ -159,59 +134,65 @@ class _ProfileTabState extends State<ProfileTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_currentUser != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircleAvatar(
-              radius: 40,
-              backgroundImage: _currentUser!.photoURL != null ? NetworkImage(_currentUser!.photoURL!) : null,
-              child: _currentUser!.photoURL == null ? const Icon(Icons.person, size: 40) : null,
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        final user = snapshot.data;
+        if (user != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundImage: user.photoURL != null ? NetworkImage(user.photoURL!) : null,
+                  child: user.photoURL == null ? const Icon(Icons.person, size: 40) : null,
+                ),
+                const SizedBox(height: 12),
+                Text(user.displayName ?? 'مستخدم Google', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                Text(user.email ?? '', style: const TextStyle(color: Colors.grey)),
+                const SizedBox(height: 30),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                  icon: const Icon(Icons.logout),
+                  label: const Text('تسجيل الخروج'),
+                  onPressed: _handleSignOut,
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            Text(_currentUser!.displayName ?? 'مستخدم Google', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            Text(_currentUser!.email ?? '', style: const TextStyle(color: Colors.grey)),
-            const SizedBox(height: 30),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-              icon: const Icon(Icons.logout),
-              label: const Text('تسجيل الخروج'),
-              onPressed: _handleSignOut,
-            ),
-          ],
-        ),
-      );
-    }
+          );
+        }
 
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircleAvatar(
-            radius: 40,
-            backgroundColor: Colors.amber,
-            child: Icon(Icons.person, size: 50, color: Colors.black),
-          ),
-          const SizedBox(height: 16),
-          const Text('المعدن الذهبي', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          const Text('مُعَدّن زائر', style: TextStyle(color: Colors.grey)),
-          const SizedBox(height: 30),
-          if (_isLoggingIn)
-            const CircularProgressIndicator(color: Colors.amber)
-          else
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircleAvatar(
+                radius: 40,
+                backgroundColor: Colors.amber,
+                child: Icon(Icons.person, size: 50, color: Colors.black),
               ),
-              icon: const Icon(Icons.login, color: Colors.red),
-              label: const Text('تسجيل الدخول باستخدام Google', style: TextStyle(fontWeight: FontWeight.bold)),
-              onPressed: _handleGoogleSignIn,
-            ),
-        ],
-      ),
+              const SizedBox(height: 16),
+              const Text('المعدن الذهبي', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const Text('مُعَدّن زائر', style: TextStyle(color: Colors.grey)),
+              const SizedBox(height: 30),
+              if (_isLoggingIn)
+                const CircularProgressIndicator(color: Colors.amber)
+              else
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                  icon: const Icon(Icons.login, color: Colors.red),
+                  label: const Text('تسجيل الدخول باستخدام Google', style: TextStyle(fontWeight: FontWeight.bold)),
+                  onPressed: _handleGoogleSignIn,
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
