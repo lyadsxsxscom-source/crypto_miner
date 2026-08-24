@@ -5,8 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // معالجة استثناءات الواجهة لمنع الشاشات الرمادية
+
   ErrorWidget.builder = (FlutterErrorDetails details) {
     return Scaffold(
       backgroundColor: Colors.black,
@@ -29,23 +28,38 @@ Future<void> main() async {
 class CryptoMinerApp extends StatelessWidget {
   const CryptoMinerApp({super.key});
 
+  // إعدادات Firebase المباشرة لتفادي خطأ القراءة من Android resources
+  static const FirebaseOptions _firebaseOptions = FirebaseOptions(
+    apiKey: "AIzaSyD-YOUR_API_KEY_HERE", // استبدل بـ apiKey الخاص بك من google-services.json
+    appId: "1:1017358589643:android:1234567890abcdef", // استبدل بـ mobsdk_app_id
+    messagingSenderId: "1017358589643",
+    projectId: "your-firebase-project-id", // استبدل بـ project_id
+  );
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Crypto Miner',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
-      // استخدام FutureBuilder لضمان تهيئة Firebase قبل عرض أي واجهة
       home: FutureBuilder(
-        future: Firebase.initializeApp(),
+        future: Firebase.initializeApp(
+          // نستخدم القيم المباشرة إذا فشلت التهيئة التلقائية
+          options: _firebaseOptions.apiKey.contains("YOUR_API_KEY") 
+              ? null 
+              : _firebaseOptions,
+        ),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Scaffold(
               body: Center(
-                child: Text(
-                  'فشل الاتصال بـ Firebase:\n${snapshot.error}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.red),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'فشل الاتصال بـ Firebase:\n${snapshot.error}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.red),
+                  ),
                 ),
               ),
             );
