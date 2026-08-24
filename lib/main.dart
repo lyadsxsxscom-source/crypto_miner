@@ -3,9 +3,18 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-void main() {
-  // 1. ضمان تهيئة Flutter قبل كل شيء
+void main() async {
+  // 1. ضمان تهيئة Flutter
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 2. تهيئة Firebase بشكل آمن ومرة واحدة فقط قبل إطلاق التطبيق
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: CryptoMinerApp._firebaseOptions,
+    );
+  }
+
+  // 3. تشغيل التطبيق بعد اكتمال التهيئة
   runApp(const CryptoMinerApp());
 }
 
@@ -20,52 +29,13 @@ class CryptoMinerApp extends StatelessWidget {
     storageBucket: "asyr-asyr-tab8.firebasestorage.app",
   );
 
-  // دالة آمنة لتهيئة الفايربيس دون تعليق الواجهة
-  Future<FirebaseApp> _initFirebase() async {
-    if (Firebase.apps.isEmpty) {
-      return await Firebase.initializeApp(options: _firebaseOptions);
-    }
-    return Firebase.app();
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Crypto Miner',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
-      // استخدام FutureBuilder في الشاشة الرئيسية لمنع الشاشة البيضاء أثناء التهيئة
-      home: FutureBuilder<FirebaseApp>(
-        future: _initFirebase(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              backgroundColor: Colors.black,
-              body: Center(
-                child: CircularProgressIndicator(color: Colors.amber),
-              ),
-            );
-          }
-
-          if (snapshot.hasError) {
-            return Scaffold(
-              backgroundColor: Colors.black,
-              body: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'خطأ في الاتصال بالفايربيس:\n${snapshot.error}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ),
-              ),
-            );
-          }
-
-          return const MainNavigationScreen();
-        },
-      ),
+      home: const MainNavigationScreen(),
     );
   }
 }
