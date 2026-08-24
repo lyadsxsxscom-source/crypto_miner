@@ -1,1 +1,55 @@
-{ "project_info": { "project_number": "1017358589643", "project_id": "asyr-asyr-tab8", "storage_bucket": "asyr-asyr-tab8.firebasestorage.app" }, "client": [ { "client_info": { "mobilesdk_app_id": "1:1017358589643:android:f367b9c036f788e2b5054e", "android_client_info": { "package_name": "com.example.cryptominer.app" } }, "oauth_client": [ { "client_id": "1017358589643-tsl6n40tfa8ofd8sflfm1feikpo44f5m.apps.googleusercontent.com", "client_type": 1, "android_info": { "package_name": "com.example.cryptominer.app", "certificate_hash": "14473735dc03e589ae093c2efb53c35467b1047e" } }, { "client_id": "1017358589643-fan84jsi99geh5bpo37qaj5bhamasdlq.apps.googleusercontent.com", "client_type": 3 } ], "api_key": [ { "current_key": "AIzaSyCJRpc2O2lfgi4JNAITf1RMhAMtZBszWl8" } ], "services": { "appinvite_service": { "other_platform_oauth_client": [ { "client_id": "1017358589643-fan84jsi99geh5bpo37qaj5bhamasdlq.apps.googleusercontent.com", "client_type": 3 } ] } } } ], "configuration_version": "1" }
+{
+  "project_info": {
+    "project_number": "1017358589643",
+    "project_id": "asyr-asyr-tab8",
+    "storage_bucket": "asyr-asyr-tab8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1017358589643:android:f367b9c036f788e2b5054e",
+        "android_client_info": {
+          "package_name": "com.example.cryptominer.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1017358589643-9vb7c846d1eboce38loqlfnde2n5hgpi.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.cryptominer.app",
+            "certificate_hash": "5e8f16062ea3cd9c2e0d5e219c6845b1f88a28b1"
+          }
+        },
+        {
+          "client_id": "1017358589643-tsl6n40tfa8ofd8sflfm1feikpo44f5m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.cryptominer.app",
+            "certificate_hash": "14473735dc03e589ae093c2efb53c35467b1047e"
+          }
+        },
+        {
+          "client_id": "1017358589643-fan84jsi99geh5bpo37qaj5bhamasdlq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJRpc2O2lfgi4JNAITf1RMhAMtZBszWl8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1017358589643-fan84jsi99geh5bpo37qaj5bhamasdlq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
