@@ -3,18 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-void main() async {
-  // 1. ضمان تهيئة Flutter
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // 2. تهيئة Firebase بشكل آمن ومرة واحدة فقط قبل إطلاق التطبيق
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(
-      options: CryptoMinerApp._firebaseOptions,
-    );
-  }
-
-  // 3. تشغيل التطبيق بعد اكتمال التهيئة
   runApp(const CryptoMinerApp());
 }
 
@@ -35,7 +25,53 @@ class CryptoMinerApp extends StatelessWidget {
       title: 'Crypto Miner',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
-      home: const MainNavigationScreen(),
+      home: const FirebaseInitWrapper(),
+    );
+  }
+}
+
+class FirebaseInitWrapper extends StatefulWidget {
+  const FirebaseInitWrapper({super.key});
+
+  @override
+  State<FirebaseInitWrapper> createState() => _FirebaseInitWrapperState();
+}
+
+class _FirebaseInitWrapperState extends State<FirebaseInitWrapper> {
+  late final Future<FirebaseApp> _initialization;
+
+  @override
+  void initState() {
+    super.initState();
+    // تهيئة الفايربيس مرة واحدة فقط في lifecycle الويدجت
+    _initialization = Firebase.apps.isEmpty
+        ? Firebase.initializeApp(options: CryptoMinerApp._firebaseOptions)
+        : Future.value(Firebase.app());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<FirebaseApp>(
+      future: _initialization,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          if (snapshot.hasError) {
+            return Scaffold(
+              body: Center(
+                child: Text('خطأ في الاتصال: ${snapshot.error}'),
+              ),
+            );
+          }
+          return const MainNavigationScreen();
+        }
+
+        return const Scaffold(
+          backgroundColor: Colors.black,
+          body: Center(
+            child: CircularProgressIndicator(color: Colors.amber),
+          ),
+        );
+      },
     );
   }
 }
