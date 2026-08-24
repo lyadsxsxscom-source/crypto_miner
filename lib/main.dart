@@ -141,18 +141,26 @@ class ProfileTab extends StatefulWidget {
 class _ProfileTabState extends State<ProfileTab> {
   bool _isLoggingIn = false;
 
-  Future<void> _handleGoogleSignIn() async {
-    setState(() => _isLoggingIn = true);
-    try {
-      final GoogleSignIn googleSignIn = GoogleSignIn();
-      await googleSignIn.signOut();
-      
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      
-      if (googleUser == null) {
-        if (mounted) setState(() => _isLoggingIn = false);
-        return;
-      }
+Future<void> _handleGoogleSignIn() async {
+  setState(() => _isLoggingIn = true);
+  try {
+    // استخدام Web Provider المباشر المتوافق مع كافة البيئات
+    GoogleAuthProvider googleProvider = GoogleAuthProvider();
+    googleProvider.addScope('email');
+    
+    // تسجيل الدخول بالاعتماد على Firebase Auth المباشر
+    await FirebaseAuth.instance.signInWithProvider(googleProvider);
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطأ أثناء التسجيل: $e')),
+      );
+    }
+  } finally {
+    if (mounted) setState(() => _isLoggingIn = false);
+  }
+}
+
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final AuthCredential credential = GoogleAuthProvider.credential(
