@@ -3,33 +3,25 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // تخصيص شاشة الخطأ لمنع ظهور الشاشة الرمادية وعرض سبب الخطأ الحقيقي
+  // معالجة استثناءات الواجهة لمنع الشاشات الرمادية
   ErrorWidget.builder = (FlutterErrorDetails details) {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Text(
-              'حدث خطأ في الواجهة:\n\n${details.exception}',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.redAccent, fontSize: 14),
-            ),
+          child: Text(
+            'حدث خطأ في الواجهة:\n\n${details.exception}',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.redAccent, fontSize: 14),
           ),
         ),
       ),
     );
   };
-
-  try {
-    await Firebase.initializeApp();
-  } catch (e) {
-    debugPrint("Firebase init error: $e");
-  }
 
   runApp(const CryptoMinerApp());
 }
@@ -43,7 +35,33 @@ class CryptoMinerApp extends StatelessWidget {
       title: 'Crypto Miner',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
-      home: const MainNavigationScreen(),
+      // استخدام FutureBuilder لضمان تهيئة Firebase قبل عرض أي واجهة
+      home: FutureBuilder(
+        future: Firebase.initializeApp(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Scaffold(
+              body: Center(
+                child: Text(
+                  'فشل الاتصال بـ Firebase:\n${snapshot.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ),
+            );
+          }
+
+          if (snapshot.connectionState == ConnectionState.done) {
+            return const MainNavigationScreen();
+          }
+
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(color: Colors.amber),
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -156,12 +174,7 @@ class _ProfileTabState extends State<ProfileTab> {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              'خطأ في الاتصال: ${snapshot.error}',
-              style: const TextStyle(color: Colors.red),
-            ),
-          );
+          return _buildLoggedOutUI();
         }
 
         final user = snapshot.data;
