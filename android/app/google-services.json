@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "1017358589643-fhpkv0j82t5o0q2e3a4ni5ovhml7vsj0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.cryptominer.app",
+            "certificate_hash": "f1e62a517c83e6f6a18e591ddef6767fe7e9c3a1"
+          }
+        },
+        {
           "client_id": "1017358589643-tsl6n40tfa8ofd8sflfm1feikpo44f5m.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
