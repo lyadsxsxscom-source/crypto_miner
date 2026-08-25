@@ -17,7 +17,7 @@ jobs:
       - name: Decode Keystore
         run: |
           mkdir -p ~/.android
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode --ignore-garbage > ~/.android/debug.keystore
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | tr -d '\r\n ' | base64 -d > ~/.android/debug.keystore
 
       - run: flutter pub get
 
