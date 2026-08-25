@@ -10,10 +10,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get SHA-1 Fingerprint
-        run: |
-          keytool -list -v -alias androiddebugkey -keystore ~/.android/debug.keystore -storepass android -keypass android
-
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.x'
@@ -21,6 +17,10 @@ jobs:
       - run: flutter pub get
 
       - run: flutter build apk --release --no-tree-shake-icons
+
+      - name: Get SHA-1 Fingerprint
+        run: |
+          keytool -list -printcert -jarfile build/app/outputs/flutter-apk/app-release.apk
 
       - uses: actions/upload-artifact@v4
         with:
