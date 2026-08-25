@@ -14,14 +14,10 @@ jobs:
         with:
           flutter-version: '3.x'
 
-      - name: Generate Fixed Keystore & Print Base64
+      - name: Decode Keystore
         run: |
           mkdir -p ~/.android
-          keytool -genkeypair -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-          echo "=== SHA1 FINGERPRINT ==="
-          keytool -list -v -alias androiddebugkey -keystore ~/.android/debug.keystore -storepass android -keypass android | grep "SHA1:"
-          echo "=== BASE64 KEYSTORE ==="
-          base64 -w 0 ~/.android/debug.keystore
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > ~/.android/debug.keystore
 
       - run: flutter pub get
 
