@@ -106,12 +106,11 @@ class ProfileTab extends StatefulWidget {
 class _ProfileTabState extends State<ProfileTab> {
   bool _isLoggingIn = false;
 
-  Future<void> _handleGoogleSignIn() async {
+ Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoggingIn = true);
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        serverClientId: '1017358589643-fan84jsi99geh5bpo37qaj5bhamasdlq.apps.googleusercontent.com',
-      );
+      // إزالة serverClientId ليتم التعرف على الإعدادات تلقائياً
+      final GoogleSignIn googleSignIn = GoogleSignIn();
 
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) return;
@@ -133,6 +132,7 @@ class _ProfileTabState extends State<ProfileTab> {
       if (mounted) setState(() => _isLoggingIn = false);
     }
   }
+
 
   Future<void> _handleSignOut() async {
     try {
