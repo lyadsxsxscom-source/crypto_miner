@@ -14,19 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "1017358589643-9vb7c846d1eboce38loqlfnde2n5hgpi.apps.googleusercontent.com",
+          "client_id": "1017358589643-1ksf0bcsmsib6q6tq9mhh1rsg44hbd1b.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.cryptominer.app",
-            "certificate_hash": "5e8f16062ea3cd9c2e0d5e219c6845b1f88a28b1"
-          }
-        },
-        {
-          "client_id": "1017358589643-fhpkv0j82t5o0q2e3a4ni5ovhml7vsj0.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.cryptominer.app",
-            "certificate_hash": "f1e62a517c83e6f6a18e591ddef6767fe7e9c3a1"
+            "certificate_hash": "7b81b6d129a24cd1931ddca6cc5b62aed026c6ee"
           }
         },
         {
