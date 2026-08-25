@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "1017358589643-1ksf0bcsmsib6q6tq9mhh1rsg44hbd1b.apps.googleusercontent.com",
+          "client_id": "1017358589643-c0i824gf1b608r4ts1c4g3tdlk2m3r0f.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.cryptominer.app",
-            "certificate_hash": "7b81b6d129a24cd1931ddca6cc5b62aed026c6ee"
+            "certificate_hash": "ef39b316c1dd336ee03e4a637e3eb9408f16a546"
           }
         },
         {
